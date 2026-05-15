@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" href="https://i.ibb.co.com/zT6Pq86r/Pokedex-Markas.png">
     <style>
@@ -373,29 +373,36 @@
         }
 
         function logout() {
-            sessionStorage.clear(); userSheetId = null; currentUserRole = "user"; currentUsername = "";
-            document.getElementById('app-screen').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'block';
-            document.getElementById('register-screen').style.display = 'none';
-            document.querySelectorAll('input').forEach(input => input.value = '');
-            document.getElementById('login-btn').innerText = 'Access Pokedex'; document.getElementById('login-btn').disabled = false;
-            document.getElementById('reg-btn').innerText = 'Create Save File'; document.getElementById('reg-btn').disabled = false;
-        }
+    sessionStorage.clear(); userSheetId = null; currentUserRole = "user"; currentUsername = "";
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('register-screen').style.display = 'none';
+    
+    // --- NEW: Lock zoom again for the login screen ---
+    document.getElementById('viewport-meta').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    
+    document.querySelectorAll('input').forEach(input => input.value = '');
+    document.getElementById('login-btn').innerText = 'Access Pokedex'; document.getElementById('login-btn').disabled = false;
+    document.getElementById('reg-btn').innerText = 'Create Save File'; document.getElementById('reg-btn').disabled = false;
+}
 
         function showAppScreen() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('register-screen').style.display = 'none';
-            document.getElementById('app-screen').style.display = 'block';
-            
-            document.getElementById('display-user').innerText = currentUsername;
-            if(currentUserRole === 'admin') {
-                document.getElementById('admin-panel').style.display = 'block';
-            } else {
-                document.getElementById('admin-panel').style.display = 'none';
-            }
-            
-            initializeApp();
-        }
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('register-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    
+    // --- NEW: Unlock zoom for the main app ---
+    document.getElementById('viewport-meta').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    
+    document.getElementById('display-user').innerText = currentUsername;
+    if(currentUserRole === 'admin') {
+        document.getElementById('admin-panel').style.display = 'block';
+    } else {
+        document.getElementById('admin-panel').style.display = 'none';
+    }
+    
+    initializeApp();
+    }
 
         function openSettings() { document.getElementById('settingsModal').style.display = "block"; }
         
