@@ -9,7 +9,7 @@
         body {
             font-family: 'Nunito', sans-serif;
             background-color: #1a1a1d;
-            background-image: radial-gradient(#2a2a2d 2px, transparent 2px), radial-gradient(#2a2a2d 2px, transparent 2px);
+            background-image: radial-gradient(#2a2a2d 2px, transparent 2px), radial-gradient(#2a2a2d F2px, transparent 2px);
             background-size: 30px 30px;
             background-position: 0 0, 15px 15px;
             color: #ffffff;
@@ -203,10 +203,34 @@
 
     <div id="app-screen">
         <div class="top-btn-container">
-            <button class="app-btn btn-settings" onclick="openSettings()">⚙️ Settings</button>
-            <button class="app-btn" onclick="logout()">Save & Quit</button>
+    <button class="app-btn" onclick="openScanner()" style="background-color: #e3350d;">📷 Scan Card</button>
+    <button class="app-btn btn-settings" onclick="openSettings()">⚙️ Settings</button>
+    <button class="app-btn" onclick="logout()">Save & Quit</button>
+</div>
+
+<div id="scannerModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; margin: 10% auto; padding: 20px; text-align: center; position: relative;">
+        <span class="close" onclick="closeScanner()" style="position: absolute; right: 20px; top: 10px; z-index: 10;">&times;</span>
+        <h3 style="color: #ffcb05; margin-top: 10px;">POKÉDEX SCANNER</h3>
+        
+        <div style="position: relative; width: 100%; max-height: 400px; border: 3px solid #444; border-radius: 8px; background: #000; line-height: 0; margin-bottom: 15px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+            <video id="camera-stream" autoplay playsinline style="width: 100%; height: auto; max-height: 100%; object-fit: contain;"></video>
+            
+            <div id="card-guide" style="position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; border: 2px solid #ffcb05; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; border-radius: 5px;"></div>
         </div>
         
+        <canvas id="snapshot-canvas" style="display: none;"></canvas>
+
+        <div id="scan-status" style="margin: 15px 0; font-weight: bold; color: #fff; text-align: center;">Align the card inside the yellow box!</div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="main-btn" id="capture-btn" onclick="captureAndScan()" style="margin-top: 0; flex: 1;">Scan Camera</button>
+            
+            <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+            <button class="main-btn" onclick="document.getElementById('image-upload').click()" style="margin-top: 0; flex: 1; background-color: #2a75bb; color: #ffcb05; border-color: #ffcb05;">Upload Image</button>
+        </div>
+    </div>
+</div>
         <div class="header-title-container">
             <img src="https://i.ibb.co.com/MkT3WgLx/Markas.png" class="header-logo" alt="Markas Logo">
             <h1>Markas Pokédex</h1>
@@ -262,7 +286,6 @@
     <script>
         // Paste your brand new Google Apps Script Web App URL here
         const API_URL = 'https://script.google.com/macros/s/AKfycbwMUirA7Lp08A7FK_0c0O8tt7nSEueRYHST8dmpJfEmM1UU33sRMn7Ncn5AJ6zd1FRu/exec';
-
         // This replaces google.script.run
         async function apiCall(action, payload = {}) {
             payload.action = action; 
@@ -591,6 +614,250 @@
             document.getElementById('imageModal').style.display = "none";
             document.body.style.overflow = "auto";
         }
+        // --- CAMERA & OCR SCANNER LOGIC ---
+
+let videoStream = null;
+
+async function openScanner() {
+    const modal = document.getElementById('scannerModal');
+    const video = document.getElementById('camera-stream');
+    const statusMsg = document.getElementById('scan-status');
+    
+    modal.style.display = "block";
+    statusMsg.innerText = "Starting camera...";
+    statusMsg.style.color = "#fff";
+    document.getElementById('capture-btn').disabled = false;
+
+    try {
+        // --- THE FIX: Advanced Camera Constraints ---
+        // Requesting 1080p forces iPhones to use the Main Sensor instead of the Ultra-Wide
+        const constraints = { 
+            video: { 
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            } 
+        };
+
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = videoStream;
+        
+        // Wait for the video to load before applying focus tricks
+        video.onloadedmetadata = () => {
+            video.play();
+            statusMsg.innerText = "Align the card inside the yellow box!";
+            
+            // Try to force Continuous Auto-Focus (Works on supported browsers/devices)
+            const track = videoStream.getVideoTracks()[0];
+            
+            // Check if the browser supports advanced focus controls
+            if (typeof track.getCapabilities === 'function') {
+                const capabilities = track.getCapabilities();
+                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                    track.applyConstraints({
+                        advanced: [{ focusMode: 'continuous' }]
+                    }).catch(e => console.log("Focus constraint ignored by browser", e));
+                }
+            }
+        };
+
+    } catch (err) {
+        console.error("Camera access denied:", err);
+        statusMsg.innerText = "Error: Camera access denied or not available.";
+        statusMsg.style.color = "#ff6b6b";
+    }
+}
+
+function closeScanner() {
+    document.getElementById('scannerModal').style.display = "none";
+    // Turn off the camera to save battery
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+}
+
+// Add this mapping at the top of your script area so the app knows what code equals what series
+const setCodeMap = {
+    "MA1": "Evolusi Mega",
+    "MA2": "Kobaran Biru",
+    "MA3": "Mega Impian EX",
+    "MA4": "Ledakan Peniada",
+    // You can add future sets here, e.g., "SV5": "Masa Depan",
+};
+// Paste this at the top of your <script> section in your HTML file
+const GEMINI_API_KEY = 'AIzaSyDoKPeEJVJQCsvxgHYoWBlLyhS9gsOKWIQ'; 
+
+// ... existing variables and functions ...
+
+// Extract the Gemini API call logic for reuse
+async function processImageWithGemini(base64Data, statusMsg, btn) {
+    statusMsg.innerText = "Transmitting to AI... please wait.";
+    statusMsg.style.color = "#ffcb05";
+    btn.disabled = true;
+
+    try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        
+        const payload = {
+            "contents": [{
+                "parts": [
+                    {"text": "You are a Pokemon card expert. Look at this card and output strictly a JSON object with three keys: 'name' (the Pokemon's name), 'id' (the 3-digit card number on the bottom, e.g., '126' or '073'), and 'set' (the 3-character set code on the bottom left, e.g., 'MA3' or 'MA4'). Do not include markdown, formatting, or conversational text. Just the JSON."},
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": base64Data
+                        }
+                    }
+                ]
+            }]
+        };
+
+        const response = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const json = await response.json();
+
+        if (!response.ok) {
+            throw new Error(json.error?.message || "API Request Failed");
+        }
+
+        // Parse the AI's JSON response
+        let aiText = json.candidates[0].content.parts[0].text;
+        aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const aiData = JSON.parse(aiText);
+        
+        // 1. Check Set Code and Auto-Switch Data Sources
+        if (aiData.set && typeof setCodeMap !== 'undefined') {
+            const foundSetCode = aiData.set.toUpperCase();
+            if (setCodeMap[foundSetCode] && document.getElementById('seriesSelect').value !== setCodeMap[foundSetCode]) {
+                document.getElementById('seriesSelect').value = setCodeMap[foundSetCode];
+                statusMsg.innerText = `Loading ${setCodeMap[foundSetCode]}...`;
+                await changeSeries(); 
+            }
+        }
+
+        // 2. Find the Card in the active database
+        let bestMatchCard = null;
+        
+        if (aiData.id) {
+            const paddedId = String(aiData.id).padStart(3, '0');
+            bestMatchCard = allCards.find(c => c.id === paddedId);
+        }
+
+        if (!bestMatchCard && aiData.name) {
+            bestMatchCard = allCards.find(c => c.name.toLowerCase().includes(aiData.name.toLowerCase()));
+        }
+
+        // 3. Update the UI and Close Scanner
+        if (bestMatchCard) {
+            statusMsg.style.color = "#2ecc71";
+            statusMsg.innerText = `Match Found: ${bestMatchCard.name} (#${bestMatchCard.id})!`;
+            
+            // Drop ID into search bar and filter
+            document.getElementById('searchInput').value = bestMatchCard.id;
+            filterCards(); 
+            
+            // Wait 1.5 seconds so the user can see success, then close modal
+            setTimeout(() => {
+                closeScanner();
+                btn.innerText = "Scan Camera";
+                btn.disabled = false;
+            }, 1500);
+
+        } else {
+            statusMsg.innerText = `AI read: ${aiData.name || 'Unknown'} (#${aiData.id || '?'}), but couldn't find it in this set.`;
+            statusMsg.style.color = "#ff6b6b";
+            btn.innerText = "Try Again";
+            btn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error("Scanner Error:", error);
+        statusMsg.innerText = "Error: " + error.message; 
+        statusMsg.style.color = "#ff6b6b";
+        btn.innerText = "Try Again";
+        btn.disabled = false;
+    }
+}
+
+async function captureAndScan() {
+    const video = document.getElementById('camera-stream');
+    const canvas = document.getElementById('snapshot-canvas');
+    const statusMsg = document.getElementById('scan-status');
+    const btn = document.getElementById('capture-btn');
+
+    // Take the picture natively
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const base64Data = imageDataUrl.split(',')[1]; 
+
+    await processImageWithGemini(base64Data, statusMsg, btn);
+}
+
+// New function for handling image uploads
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const statusMsg = document.getElementById('scan-status');
+    const btn = document.getElementById('capture-btn');
+    const canvas = document.getElementById('snapshot-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    statusMsg.innerText = "Processing uploaded image...";
+    statusMsg.style.color = "#ffcb05";
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = async () => {
+            // Draw uploaded image to canvas
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+            
+            const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const base64Data = imageDataUrl.split(',')[1];
+            
+            // Optionally close the video stream if it's running
+            if(videoStream) {
+               videoStream.getTracks().forEach(track => track.stop());
+            }
+
+            await processImageWithGemini(base64Data, statusMsg, btn);
+            
+            // Reset the input value so the same file can be uploaded again if needed
+            document.getElementById('image-upload').value = '';
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+        // --- IMAGE PRE-PROCESSING FOR HOLO CARDS ---
+function applyOcrFilters(canvas) {
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    for (let i = 0; i < data.length; i += 4) {
+        // Standard Grayscale conversion
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        
+        data[i] = gray;     // R
+        data[i + 1] = gray; // G
+        data[i + 2] = gray; // B
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+}
     </script>
 </body>
 </html>
