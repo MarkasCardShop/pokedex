@@ -313,6 +313,7 @@
         let currentUsername = sessionStorage.getItem("username") || "";
 
         document.addEventListener('DOMContentLoaded', () => {
+            loadSetDataFromSheet();
             if (userSheetId) showAppScreen();
 
             // --- NEW: Trigger login when pressing Enter ---
@@ -678,19 +679,9 @@ function closeScanner() {
 }
 
 // Add this mapping at the top of your script area so the app knows what code equals what series
-const setCodeMap = {
-    "SV7S": "Bimbingan Rasi",
-    "SV8S": "Kilat Rasi",
-    "SV8A": "Festival Terastal",
-    "SV9S": "Ikatan Takdir",
-    "SV10S": "Kehadiran Juara",
-    "SV11S": "Hitam Putih",
-    "MA1": "Evolusi Mega",
-    "MA2": "Kobaran Biru",
-    "MA3": "Mega Impian EX",
-    "MA4": "Ledakan Peniada",
-    // You can add future sets here, e.g., "SV5": "Masa Depan",
-};
+// These will be automatically filled from your Google Sheet!
+let setCodeMap = {};
+let setTotalMap = {};
 // Leave this empty! We will fetch it from Code.gs securely.
 let GEMINI_API_KEY = "";
 
@@ -718,10 +709,19 @@ async function processImageWithGemini(base64Data, statusMsg, btn) {
         
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
+        // --- 1. UPDATED AI INSTRUCTIONS ---
+       // --- UPDATED UNRESTRICTED AI INSTRUCTIONS ---
         const payload = {
             "contents": [{
                 "parts": [
-                    {"text": "You are a Pokemon card expert. Look at this card and output strictly a JSON object with three keys: 'name' (the Pokemon's name), 'id' (the 3-digit card number on the bottom, e.g., '126' or '073'), and 'set' (the 3-character set code on the bottom left, e.g., 'MA3' or 'MA4'). Do not include markdown, formatting, or conversational text. Just the JSON."},
+                    {
+                        "text": "You are a Pokemon card expert. Look at this card and output strictly a JSON object with 4 keys:\n" +
+                                "- 'name': the Pokemon's name\n" +
+                                "- 'id': the card number on the LEFT of the slash (e.g., '126')\n" +
+                                "- 'set_total': the total number on the RIGHT of the slash (e.g., '193')\n" +
+                                "- 'set': the set code symbol printed on the bottom corner (e.g., 'MA3', 'sv11S', 'SV1a'). Extract it exactly as printed.\n\n" +
+                                "Do not include markdown or conversational text. Just the raw JSON object."
+                    },
                     {
                         "inline_data": {
                             "mime_type": "image/jpeg",
@@ -744,55 +744,95 @@ async function processImageWithGemini(base64Data, statusMsg, btn) {
             throw new Error(json.error?.message || "API Request Failed");
         }
 
-        // Parse the AI's JSON response
         let aiText = json.candidates[0].content.parts[0].text;
         aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
         const aiData = JSON.parse(aiText);
         
-        // ... (The rest of your code remains exactly the same from here down!)
-        
-        // 1. Check Set Code and Auto-Switch Data Sources
+        // --- 2. AUTO-SWITCH DATA SOURCES WITH STRICT PRIORITY ---
+        let validSetFound = false; 
+
+        // === NEW: OCR CORRECTION FOR SV ERA SETS ===
+        if (aiData.set && aiData.set.toLowerCase().startsWith('sv')) {
+            let setStr = aiData.set.toLowerCase(); // e.g., "svlls"
+            let body = setStr.slice(2);            // Get everything after "sv" (e.g., "lls")
+            let lastChar = body.slice(-1);         // Get the final alphabet letter (e.g., "s" or "a")
+            let middleNumbers = body.slice(0, -1); // Get the middle part that SHOULD be numbers (e.g., "ll")
+
+            // Convert accidental letters 'l' or 'i' into the number '1'
+            middleNumbers = middleNumbers.replace(/l/g, '1').replace(/i/g, '1');
+
+            // Reconstruct the corrected set code (e.g., "sv" + "11" + "s" = "sv11s")
+            aiData.set = 'sv' + middleNumbers + lastChar;
+        }
+        // ===========================================
+
+        // Attempt A: STRICTLY prioritize the Set Code (Now sanitized!)
         if (aiData.set && typeof setCodeMap !== 'undefined') {
-            const foundSetCode = aiData.set.toUpperCase();
-            if (setCodeMap[foundSetCode] && document.getElementById('seriesSelect').value !== setCodeMap[foundSetCode]) {
-                document.getElementById('seriesSelect').value = setCodeMap[foundSetCode];
-                statusMsg.innerText = `Loading ${setCodeMap[foundSetCode]}...`;
-                await changeSeries(); 
+            const foundSetCode = aiData.set.toUpperCase(); // Will look for "SV11S" now!
+            
+            // Check if this code actually exists in your database map
+            if (setCodeMap[foundSetCode]) {
+// ... rest of your Attempt A code continues exactly as it was ...
+                validSetFound = true; // Success! Lock out the fallback.
+                
+                // Only change the dropdown if we aren't already on this set
+                if (document.getElementById('seriesSelect').value !== setCodeMap[foundSetCode]) {
+                    document.getElementById('seriesSelect').value = setCodeMap[foundSetCode];
+                    statusMsg.innerText = `Loading ${setCodeMap[foundSetCode]}...`;
+                    await changeSeries(); 
+                }
             }
         }
 
-        // 2. Find the Card in the active database
+        // Attempt B: ONLY search the /xxx if Attempt A completely failed 
+        if (!validSetFound && aiData.set_total && typeof setTotalMap !== 'undefined') {
+            const foundTotal = String(aiData.set_total).padStart(3, '0'); 
+            
+            // Check if this denominator exists in your fallback map
+            if (setTotalMap[foundTotal]) {
+                
+                // Only change the dropdown if we aren't already on this set
+                if (document.getElementById('seriesSelect').value !== setTotalMap[foundTotal]) {
+                    document.getElementById('seriesSelect').value = setTotalMap[foundTotal];
+                    statusMsg.innerText = `Set Code unreadable. AR Fallback: Loading set via /${foundTotal}...`;
+                    await changeSeries();
+                }
+            }
+        }
+        // --- 3. FIND THE CARD IN THE DATABASE ---
         let bestMatchCard = null;
         
-        // Helper to "normalize" names (removes "ex", "mega", etc., and extra spaces)
         const normalizeName = (name) => {
             return name.toLowerCase()
-                .replace(/\s+(ex|mega|v|vmax|vstar|gx|tag team|sv)\b/g, '') // remove common suffixes
-                .replace(/[^a-z0-9]/g, '') // remove punctuation/spaces
+                .replace(/\s+(ex|mega|v|vmax|vstar|gx|tag team|sv)\b/g, '')
+                .replace(/[^a-z0-9]/g, '')
                 .trim();
         };
 
         if (aiData.id) {
-            const paddedId = String(aiData.id).padStart(3, '0');
-            bestMatchCard = allCards.find(c => c.id === paddedId);
-        }
-
-        // Fallback: If ID didn't find a perfect match, try the "Smart Match"
-        if (!bestMatchCard && aiData.name) {
-            const normalizedAiName = normalizeName(aiData.name);
+            // FIX 1: Aggressively strip out any #, spaces, or slashes the AI accidentally included
+            let cleanId = String(aiData.id).split('/')[0].replace(/[^a-zA-Z0-9]/g, '').trim();
+            const paddedId = cleanId.padStart(3, '0');
+            
             bestMatchCard = allCards.find(c => {
-                const normalizedDbName = normalizeName(c.name);
-                // Match if the core name is the same OR if the AI's name is inside the DB name
-                return normalizedDbName.includes(normalizedAiName) || normalizedAiName.includes(normalizedDbName);
+                if (!c.id) return false; // Safety check
+                const dbId = String(c.id).replace(/[^a-zA-Z0-9]/g, '').trim().padStart(3, '0');
+                return dbId === paddedId;
             });
         }
 
-        // 3. Update the UI and Close Scanner
-        if (bestMatchCard) {
-            statusMsg.style.color = "#2ecc71";
-            statusMsg.innerText = `Match Found: ${bestMatchCard.name} (#${bestMatchCard.id})!`;
+        // Smart Name Match Fallback
+        if (!bestMatchCard && aiData.name) {
+            const normalizedAiName = normalizeName(aiData.name);
+            bestMatchCard = allCards.find(c => {
+                if (!c.name) return false; // Safety check
+                const normalizedDbName = normalizeName(c.name);
+                return normalizedDbName.includes(normalizedAiName) || normalizedAiName.includes(normalizedDbName);
+            });
+        }
             
-            // Drop ID into search bar and filter
+        // Drop ID into search bar and filter
+        if (bestMatchCard) {
             document.getElementById('searchInput').value = bestMatchCard.id;
             filterCards(); 
             
@@ -804,7 +844,13 @@ async function processImageWithGemini(base64Data, statusMsg, btn) {
             }, 1500);
 
         } else {
-            statusMsg.innerText = `AI read: ${aiData.name || 'Unknown'} (#${aiData.id || '?'}), but couldn't find it in this set.`;
+            const readName = aiData.name || 'Unknown';
+            const readId = aiData.id || '?';
+            const readSet = aiData.set || 'Missing';
+            const readTotal = aiData.set_total ? `/${aiData.set_total}` : '';
+
+            // FIX 2: Added ${allCards.length} to tell us if the database is actually loaded!
+            statusMsg.innerText = `AI read: ${readName} (#${readId}${readTotal}) [Set: ${readSet}], but couldn't find it in ${allCards.length} loaded cards.`;
             statusMsg.style.color = "#ff6b6b";
             btn.innerText = "Try Again";
             btn.disabled = false;
@@ -892,6 +938,22 @@ function applyOcrFilters(canvas) {
     }
     
     ctx.putImageData(imageData, 0, 0);
+}
+        async function loadSetDataFromSheet() {
+    try {
+        console.log("Downloading Set Data from Google Sheets...");
+        const response = await apiCall('getSetData', {});
+        
+        if (response.success) {
+            setCodeMap = response.setCodeMap;
+            setTotalMap = response.setTotalMap;
+            console.log("Successfully loaded Set Data!");
+        } else {
+            console.error("Failed to load sets from sheet:", response.error);
+        }
+    } catch (error) {
+        console.error("Network error loading sets:", error);
+    }
 }
     </script>
 </body>
