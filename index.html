@@ -7,11 +7,12 @@
     <link rel="icon" type="image/png" href="https://i.ibb.co.com/zT6Pq86r/Pokedex-Markas.png">
     <link rel="apple-touch-icon" href="https://i.ibb.co.com/zT6Pq86r/Pokedex-Markas.png">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
     <style>
         body {
             font-family: 'Nunito', sans-serif;
             background-color: #1a1a1d;
-            background-image: radial-gradient(#2a2a2d 2px, transparent 2px), radial-gradient(#2a2a2d F2px, transparent 2px);
+            background-image: radial-gradient(#2a2a2d 2px, transparent 2px), radial-gradient(#2a2a2d 2px, transparent 2px);
             background-size: 30px 30px;
             background-position: 0 0, 15px 15px;
             color: #ffffff;
@@ -81,7 +82,7 @@
         .auth-note { font-size: 0.8em; color: #888; margin-top: 15px; }
 
         #register-screen, #app-screen { display: none; }
-
+    
         /* --- STICKY Controls Area --- */
         .controls-container {
             position: sticky; top: 10px; z-index: 900; max-width: 1200px; margin: 0 auto 30px auto;
@@ -122,7 +123,7 @@
         .app-btn { background-color: #444; border: 3px solid #222; box-shadow: 0 4px 0px #111; padding: 8px 15px; border-radius: 8px; color: white; cursor: pointer; font-weight: 900; text-transform: uppercase; margin-left: 10px;}
         .app-btn:active { transform: translateY(4px); box-shadow: none; }
         .btn-settings { background-color: #2a75bb; }
-
+    
         /* --- Modal Styles --- */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
         .modal-content { background-color: #222; margin: 10% auto; padding: 30px; border: 4px solid #2a75bb; width: 90%; max-width: 400px; border-radius: 15px; box-shadow: 0 10px 30px #000; text-align: center; position: relative;}
@@ -131,7 +132,7 @@
         .admin-zone { border-top: 3px dashed #444; margin-top: 25px; padding-top: 15px; display: none; }
         .modal h3 { color: #ffcb05; }
         .admin-zone h3 { color: #e3350d; }
-
+    
         @media (max-width: 600px) {
             body { padding: 10px; } 
             h1 { font-size: 1.8em; }
@@ -157,28 +158,28 @@
             margin: 5% auto;
             padding: 0;
         }
-
+    
         #fullsize-image {
             width: 100%;
             max-height: 80vh;
             object-fit: contain;
             border-radius: 15px;
-            border: 5px solid #ffcb05; /* Pokemon Yellow Border */
+            border: 5px solid #ffcb05;
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
         }
-
+    
         .card-image {
-            cursor: zoom-in; /* Shows the user it's clickable */
+            cursor: zoom-in;
             transition: transform 0.2s;
         }
-
+    
         .card-image:hover {
             transform: scale(1.05);
         }
     </style>
 </head>
 <body>
-
+    
     <div id="login-screen" class="auth-screen">
         <img src="https://i.ibb.co.com/MkT3WgLx/Markas.png" class="app-logo" alt="Markas Logo">
         <h2>TRAINER LOGIN</h2>
@@ -188,7 +189,7 @@
         <div id="login-error" class="auth-error"></div>
         <button onclick="toggleAuthScreens()" class="switch-btn">New Trainer? Register Here</button>
     </div>
-
+    
     <div id="register-screen" class="auth-screen">
         <img src="https://i.ibb.co.com/MkT3WgLx/Markas.png" class="app-logo" alt="Markas Logo">
         <h2>REGISTER TRAINER</h2>
@@ -203,37 +204,44 @@
         <div class="auth-note">Saving your progress data will take 5-10 seconds.</div>
         <button onclick="toggleAuthScreens()" class="switch-btn">Already registered? Login Here</button>
     </div>
-
+    
     <div id="app-screen">
-        <div class="top-btn-container">
-    <button class="app-btn" onclick="openScanner()" style="background-color: #e3350d;">📷 Scan Card</button>
-    <button class="app-btn btn-settings" onclick="openSettings()">⚙️ Settings</button>
-    <button class="app-btn" onclick="logout()">Save & Quit</button>
-</div>
-
-<div id="scannerModal" class="modal">
-    <div class="modal-content" style="max-width: 500px; margin: 10% auto; padding: 20px; text-align: center; position: relative;">
-        <span class="close" onclick="closeScanner()" style="position: absolute; right: 20px; top: 10px; z-index: 10;">&times;</span>
-        <h3 style="color: #ffcb05; margin-top: 10px;">POKÉDEX SCANNER</h3>
+    <div class="top-btn-container">
         
-        <div style="position: relative; width: 100%; max-height: 400px; border: 3px solid #444; border-radius: 8px; background: #000; line-height: 0; margin-bottom: 15px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
-            <video id="camera-stream" autoplay playsinline style="width: 100%; height: auto; max-height: 100%; object-fit: contain;"></video>
-            
-            <div id="card-guide" style="position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; border: 2px solid #ffcb05; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; border-radius: 5px;"></div>
+        <div class="btn-row">
+            <button class="app-btn" onclick="openScanner('orb')" style="background-color: #8e44ad;">📷 Scan Cards</button>
         </div>
-        
-        <canvas id="snapshot-canvas" style="display: none;"></canvas>
 
-        <div id="scan-status" style="margin: 15px 0; font-weight: bold; color: #fff; text-align: center;">Align the card inside the yellow box!</div>
-        
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="main-btn" id="capture-btn" onclick="captureAndScan()" style="margin-top: 0; flex: 1;">Scan Camera</button>
-            
-            <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-            <button class="main-btn" onclick="document.getElementById('image-upload').click()" style="margin-top: 0; flex: 1; background-color: #2a75bb; color: #ffcb05; border-color: #ffcb05;">Upload Image</button>
+        <div class="btn-row">
+            <button class="app-btn btn-settings" onclick="openSettings()">⚙️ Settings</button>
+            <button class="app-btn" onclick="logout()">Save & Quit</button>
         </div>
+
     </div>
 </div>
+    
+        <div id="scannerModal" class="modal">
+            <div class="modal-content" style="max-width: 500px; margin: 10% auto; padding: 20px; text-align: center; position: relative;">
+                <span class="close" onclick="closeScanner()" style="position: absolute; right: 20px; top: 10px; z-index: 10;">&times;</span>
+                <h3 style="color: #ffcb05; margin-top: 10px;">POKÉDEX SCANNER</h3>
+                
+                <div style="position: relative; width: 100%; max-height: 400px; border: 3px solid #444; border-radius: 8px; background: #000; line-height: 0; margin-bottom: 15px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                    <video id="camera-stream" autoplay playsinline style="width: 100%; height: auto; max-height: 100%; object-fit: contain;"></video>
+                    <div id="card-guide" style="position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; border: 2px solid #ffcb05; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; border-radius: 5px;"></div>
+                </div>
+                
+                <canvas id="snapshot-canvas" style="display: none;"></canvas>
+        
+                <div id="scan-status" style="margin: 15px 0; font-weight: bold; color: #fff; text-align: center;">Align the card inside the yellow box!</div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="main-btn" id="capture-btn" onclick="captureAndScan()" style="margin-top: 0; flex: 1;">Scan Camera</button>
+                    <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                    <button class="main-btn" onclick="document.getElementById('image-upload').click()" style="margin-top: 0; flex: 1; background-color: #2a75bb; color: #ffcb05; border-color: #ffcb05;">Upload Image</button>
+                </div>
+            </div>
+        </div>
+
         <div class="header-title-container">
             <img src="https://i.ibb.co.com/MkT3WgLx/Markas.png" class="header-logo" alt="Markas Logo">
             <h1>Markas Pokédex</h1>
@@ -247,13 +255,13 @@
                 <div class="progress-bar-container"><div class="progress-bar-fill" id="progressBar"></div></div>
             </div>
         </div>
-
+    
         <div id="status-msg">Loading Pokedex Data...</div>
         <div class="card-grid" id="cardGrid"></div>
     </div>
-
+    
     <div id="settingsModal" class="modal">
-      <div class="modal-content">
+        <div class="modal-content">
         <span class="close" onclick="closeSettings()">&times;</span>
         
         <h3>USER SETTINGS</h3>
@@ -261,45 +269,37 @@
         <input type="password" id="new-my-pin" placeholder="New 4-Digit PIN" maxlength="4" inputmode="numeric">
         <button class="main-btn" onclick="updateMyPin()">Update My PIN</button>
         <div id="set-user-msg"></div>
-
+    
         <div id="admin-panel" class="admin-zone">
             <h3>ADMIN CONTROLS</h3>
-            
             <input type="text" id="new-ref-code" placeholder="New Referral Code">
             <button class="main-btn" style="background-color:#e3350d; color:#fff;" onclick="updateReferral()">Change Referral Code</button>
-            
             <hr style="border: 1px solid #333; margin: 20px 0;">
-            
             <input type="text" id="target-username" placeholder="Target Username">
             <input type="password" id="target-new-pin" placeholder="Force New 4-Digit PIN" maxlength="4" inputmode="numeric">
             <button class="main-btn" style="background-color:#e3350d; color:#fff;" onclick="forcePinReset()">Force Reset PIN</button>
-            
             <div id="set-admin-msg"></div>
         </div>
-      </div>
+        </div>
     </div> 
-
+    
     <div id="imageModal" class="modal" onclick="closeImageModal()">
         <div class="modal-content">
             <span class="close" onclick="closeImageModal()">&times;</span>
             <img id="fullsize-image" src="" alt="Card Preview">
         </div>
     </div>
-
+    
     <script>
-        // Paste your brand new Google Apps Script Web App URL here
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwMUirA7Lp08A7FK_0c0O8tt7nSEueRYHST8dmpJfEmM1UU33sRMn7Ncn5AJ6zd1FRu/exec';
-        // This replaces google.script.run
+        const API_URL = 'https://script.google.com/macros/s/AKfycbx0kKFXkwI7MWxnUuzl9EF919QzVYUDVrtpauaWIQsZ26LArYsYkXTUzwClsheFPQ/exec';
+
         async function apiCall(action, payload = {}) {
             payload.action = action; 
-            
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    redirect: 'follow', // Required for Google's security redirects
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8', // Bypasses strict CORS rules
-                    },
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
                 return await response.json();
@@ -314,20 +314,26 @@
         let userSheetId = sessionStorage.getItem("userSheetId") || null;
         let currentUserRole = sessionStorage.getItem("userRole") || "user";
         let currentUsername = sessionStorage.getItem("username") || "";
+        let orbDatabase = [];
+        let parsedOrbDatabase = [];
+        let currentScanMode = 'ocr';
+        let videoStream = null;
+        let setCodeMap = {};
+        let setTotalMap = {};
+        let GEMINI_API_KEY = "";
 
         document.addEventListener('DOMContentLoaded', () => {
             loadSetDataFromSheet();
+            loadOrbDatabase();
             if (userSheetId) showAppScreen();
 
-            // --- NEW: Trigger login when pressing Enter ---
             const triggerLoginOnEnter = (event) => {
                 if (event.key === 'Enter') {
-                    event.preventDefault(); // Prevents unexpected form behavior
+                    event.preventDefault(); 
                     attemptLogin();
                 }
             };
-
-            // Listen for Enter on both the username and PIN fields
+            
             document.getElementById('log-username').addEventListener('keypress', triggerLoginOnEnter);
             document.getElementById('log-pin').addEventListener('keypress', triggerLoginOnEnter);
         });
@@ -338,19 +344,19 @@
             document.getElementById('login-error').style.display = 'none';
             document.getElementById('reg-error').style.display = 'none';
         }
-
+    
         function isPinValid(pin) { return /^\d{4}$/.test(pin); }
-
+    
         async function attemptLogin() {
             const user = document.getElementById('log-username').value.trim();
             const pin = document.getElementById('log-pin').value.trim();
             const btn = document.getElementById('login-btn');
             const err = document.getElementById('login-error');
-
+    
             if(!user || !pin) { err.innerText = "Enter both username and PIN."; err.style.display = "block"; return; }
-
+    
             btn.innerText = "Connecting..."; btn.disabled = true; err.style.display = "none";
-
+    
             const res = await apiCall('login', { username: user, pin: pin });
             
             if (res.success) {
@@ -365,6 +371,72 @@
             }
         }
 
+        function loadImageAsync(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                
+                // 1. Clean the string of any accidental spaces or newlines from Google Sheets
+                let cleanSrc = src.toString().trim().replace(/\s+/g, '');
+                
+                // 2. Add the correct prefix if you accidentally forgot it in the spreadsheet
+                if (!cleanSrc.startsWith('data:image')) {
+                    cleanSrc = 'data:image/jpeg;base64,' + cleanSrc;
+                }
+
+                img.onload = () => {
+                    // 3. Force dimensions so OpenCV knows exactly how big the canvas is
+                    img.width = img.naturalWidth;
+                    img.height = img.naturalHeight;
+                    resolve(img);
+                };
+                
+                // If it fails to load, it's almost certainly because Sheets cut the string off
+                img.onerror = () => reject(new Error("Image string cut off or corrupted"));
+                img.src = cleanSrc;
+            });
+        }
+
+        // Triggered when the main app screen opens
+        // Triggered when the main app screen opens
+        async function loadOrbDatabase() {
+            try {
+                const response = await apiCall('getGlobalOrbData', {}); 
+                
+                if (response.success && response.orbDatabase && response.orbDatabase.length > 0 && response.orbDatabase[0].id !== "ERROR") {
+                    await parseOrbImages(response.orbDatabase);
+                } else {
+                    console.error("ORB Data failed to load or was empty.");
+                }
+            } catch (error) {
+                console.error("Network Error downloading ORB data.", error);
+            }
+        }
+
+        // Quietly convert strings into OpenCV math
+        async function parseOrbImages(rawDb) {
+            parsedOrbDatabase = [];
+            
+            if (typeof cv === 'undefined' || !cv.Mat) {
+                setTimeout(() => parseOrbImages(rawDb), 1000);
+                return;
+            }
+
+            for (let i = 0; i < rawDb.length; i++) {
+                let card = rawDb[i];
+                let des = convertStringToDescriptor(card.orbCode);
+                
+                if (des && !des.empty()) {
+                    parsedOrbDatabase.push({
+                        id: card.id,
+                        name: card.name,
+                        setCode: card.setCode,
+                        descriptors: des
+                    });
+                }
+            }
+            console.log(`ORB Database Ready in background! Loaded ${parsedOrbDatabase.length} cards.`);
+        }
+
         async function attemptRegister() {
             const user = document.getElementById('reg-username').value.trim();
             const mobile = document.getElementById('reg-mobile').value.trim();
@@ -373,13 +445,13 @@
             const referral = document.getElementById('reg-referral').value.trim();
             const btn = document.getElementById('reg-btn');
             const err = document.getElementById('reg-error');
-
+    
             if(!user || !mobile || !pin || !confirm || !referral) { err.innerText = "Fill out all fields."; err.style.display = "block"; return; }
             if(!isPinValid(pin)) { err.innerText = "PIN must be exactly 4 digits."; err.style.display = "block"; return; }
             if(pin !== confirm) { err.innerText = "PINs do not match."; err.style.display = "block"; return; }
-
+    
             btn.innerText = "Creating Save File..."; btn.disabled = true; err.style.display = "none";
-
+    
             const res = await apiCall('register', { 
                 username: user, 
                 pin: pin, 
@@ -398,39 +470,33 @@
                 btn.innerText = "Create Save File"; btn.disabled = false;
             }
         }
-
+    
         function logout() {
-    sessionStorage.clear(); userSheetId = null; currentUserRole = "user"; currentUsername = "";
-    document.getElementById('app-screen').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'block';
-    document.getElementById('register-screen').style.display = 'none';
+            sessionStorage.clear(); userSheetId = null; currentUserRole = "user"; currentUsername = "";
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('register-screen').style.display = 'none';
+            document.getElementById('viewport-meta').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+            document.querySelectorAll('input').forEach(input => input.value = '');
+            document.getElementById('login-btn').innerText = 'Access Pokedex'; document.getElementById('login-btn').disabled = false;
+            document.getElementById('reg-btn').innerText = 'Create Save File'; document.getElementById('reg-btn').disabled = false;
+        }
     
-    // --- NEW: Lock zoom again for the login screen ---
-    document.getElementById('viewport-meta').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-    
-    document.querySelectorAll('input').forEach(input => input.value = '');
-    document.getElementById('login-btn').innerText = 'Access Pokedex'; document.getElementById('login-btn').disabled = false;
-    document.getElementById('reg-btn').innerText = 'Create Save File'; document.getElementById('reg-btn').disabled = false;
-}
-
         function showAppScreen() {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('register-screen').style.display = 'none';
-    document.getElementById('app-screen').style.display = 'block';
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('register-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            document.getElementById('viewport-meta').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+            document.getElementById('display-user').innerText = currentUsername;
+            if(currentUserRole === 'admin') {
+                document.getElementById('admin-panel').style.display = 'block';
+            } else {
+                document.getElementById('admin-panel').style.display = 'none';
+            }
+            initializeApp();
+            loadOrbDatabase();
+        }
     
-    // --- NEW: Unlock zoom for the main app ---
-    document.getElementById('viewport-meta').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
-    
-    document.getElementById('display-user').innerText = currentUsername;
-    if(currentUserRole === 'admin') {
-        document.getElementById('admin-panel').style.display = 'block';
-    } else {
-        document.getElementById('admin-panel').style.display = 'none';
-    }
-    
-    initializeApp();
-    }
-
         function openSettings() { document.getElementById('settingsModal').style.display = "block"; }
         
         function closeSettings() { 
@@ -446,7 +512,7 @@
             el.style.display = 'block';
             setTimeout(() => { el.style.display = 'none'; }, 4000);
         }
-
+    
         async function updateMyPin() {
             const pin = document.getElementById('new-my-pin').value;
             if(!isPinValid(pin)) return showMsg('set-user-msg', 'PIN must be 4 digits.', false);
@@ -463,7 +529,7 @@
                 showMsg('set-user-msg', res.error, false);
             }
         }
-
+    
         async function updateReferral() {
             const code = document.getElementById('new-ref-code').value.trim();
             if(!code) return showMsg('set-admin-msg', 'Code cannot be empty.', false);
@@ -477,7 +543,7 @@
                 showMsg('set-admin-msg', res.error || 'Update failed', false);
             }
         }
-
+    
         async function forcePinReset() {
             const user = document.getElementById('target-username').value.trim();
             const pin = document.getElementById('target-new-pin').value;
@@ -493,7 +559,7 @@
                 showMsg('set-admin-msg', res.error, false);
             }
         }
-
+    
         async function initializeApp() {
             const res = await apiCall('getSeries', { userSheetId: userSheetId });
             if (res.success) {
@@ -502,15 +568,15 @@
                 showError(res.error);
             }
         }
-
+    
         function populateSeriesDropdown(seriesList) {
             const select = document.getElementById('seriesSelect'); select.innerHTML = ''; 
             seriesList.forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.text = s; select.appendChild(opt); });
             if(seriesList.length > 0) { currentSeries = seriesList[seriesList.length - 1]; select.value = currentSeries; loadCardsForSeries(); }
         }
-
+    
         function changeSeries() { currentSeries = document.getElementById('seriesSelect').value; loadCardsForSeries(); }
-
+    
         async function loadCardsForSeries() {
             document.getElementById('status-msg').innerText = `Syncing ${currentSeries} Data...`;
             document.getElementById('status-msg').style.display = 'block'; 
@@ -520,7 +586,7 @@
                 seriesName: currentSeries, 
                 userSheetId: userSheetId 
             });
-
+    
             if (res.success) {
                 allCards = res.cards; 
                 filterCards();
@@ -528,13 +594,13 @@
                 showError(res.error);
             }
         }
-
+    
         function filterCards() {
             const term = document.getElementById('searchInput').value.toLowerCase();
             renderCards(allCards.filter(c => c.name.toLowerCase().includes(term) || c.id.includes(term)));
             updateProgress();
         }
-
+    
         function renderCards(cardsToRender) {
             const grid = document.getElementById('cardGrid'); 
             document.getElementById('status-msg').style.display = 'none'; 
@@ -559,7 +625,7 @@
                 grid.appendChild(div);
             });
         }
-
+    
         async function toggleOwned(id, isOwned) {
             const el = document.getElementById(`card-${id}`);
             isOwned ? el.classList.add('owned') : el.classList.remove('owned');
@@ -570,15 +636,13 @@
                 updateProgress(); 
             }
             
-            // Send to database
             const res = await apiCall('updateOwned', {
                 id: id,
                 isOwned: isOwned,
                 seriesName: currentSeries,
                 userSheetId: userSheetId
             });
-
-            // If the database fails to save, revert the checkbox and visual state back
+    
             if (!res.success) {
                 alert('Data Sync Failed!'); 
                 document.querySelector(`#card-${id} input`).checked = !isOwned;
@@ -590,14 +654,14 @@
                 }
             }
         }
-
+    
         function updateProgress() {
             const total = allCards.length; const collected = allCards.filter(c => c.owned).length;
             const pct = total === 0 ? 0 : Math.round((collected / total) * 100);
             document.getElementById('progressText').innerText = `${collected} / ${total} Registered (${pct}%)`;
             document.getElementById('progressBar').style.width = `${pct}%`;
         }
-
+    
         function showError(error) { 
             document.getElementById('status-msg').innerText = 'Pokedex Error. Please restart.'; 
             document.getElementById('status-msg').style.display = 'block'; 
@@ -609,138 +673,269 @@
             const fullImg = document.getElementById('fullsize-image');
             fullImg.src = url;
             modal.style.display = "block";
-            
-            // Prevent scrolling on the background while looking at the image
             document.body.style.overflow = "hidden"; 
         }
-
+    
         function closeImageModal() {
             document.getElementById('imageModal').style.display = "none";
             document.body.style.overflow = "auto";
         }
-        // --- CAMERA & OCR SCANNER LOGIC ---
-
-let videoStream = null;
-
-async function openScanner() {
-    const modal = document.getElementById('scannerModal');
-    const video = document.getElementById('camera-stream');
-    const statusMsg = document.getElementById('scan-status');
     
-    modal.style.display = "block";
-    statusMsg.innerText = "Starting camera...";
-    statusMsg.style.color = "#fff";
-    document.getElementById('capture-btn').disabled = false;
-
-    try {
-        // --- THE FIX: Advanced Camera Constraints ---
-        // Requesting 1080p forces iPhones to use the Main Sensor instead of the Ultra-Wide
-        const constraints = { 
-            video: { 
-                facingMode: { ideal: 'environment' },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            } 
-        };
-
-        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = videoStream;
-        
-        // Wait for the video to load before applying focus tricks
-        video.onloadedmetadata = () => {
-            video.play();
-            statusMsg.innerText = "Align the card inside the yellow box!";
-            
-            // Try to force Continuous Auto-Focus (Works on supported browsers/devices)
-            const track = videoStream.getVideoTracks()[0];
-            
-            // Check if the browser supports advanced focus controls
-            if (typeof track.getCapabilities === 'function') {
-                const capabilities = track.getCapabilities();
-                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                    track.applyConstraints({
-                        advanced: [{ focusMode: 'continuous' }]
-                    }).catch(e => console.log("Focus constraint ignored by browser", e));
-                }
+        async function openScanner(mode = 'ocr') {
+            currentScanMode = mode; 
+            const modal = document.getElementById('scannerModal');
+            const video = document.getElementById('camera-stream');
+            const statusMsg = document.getElementById('scan-status');
+            const title = document.querySelector('#scannerModal h3'); 
+    
+            if (currentScanMode === 'orb') {
+                title.innerText = "ORB IMAGE SCANNER";
+                title.style.color = "#8e44ad";
+            } else {
+                title.innerText = "POKÉDEX TEXT SCANNER";
+                title.style.color = "#ffcb05";
             }
-        };
-
-    } catch (err) {
-        console.error("Camera access denied:", err);
-        statusMsg.innerText = "Error: Camera access denied or not available.";
-        statusMsg.style.color = "#ff6b6b";
-    }
-}
-
-function closeScanner() {
-    document.getElementById('scannerModal').style.display = "none";
-    // Turn off the camera to save battery
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
-}
-
-// Add this mapping at the top of your script area so the app knows what code equals what series
-// These will be automatically filled from your Google Sheet!
-let setCodeMap = {};
-let setTotalMap = {};
-// Leave this empty! We will fetch it from Code.gs securely.
-let GEMINI_API_KEY = "";
-
-        // === THE HYBRID SCAN MANAGER ===
-async function hybridScan(base64Data, canvas, statusMsg, btn) {
-    statusMsg.innerText = "Running Standard Scan (Free)...";
-    statusMsg.style.color = "#fff";
-    btn.disabled = true;
-
-    try {
-        // --- 1. TESSERACT (LOCAL) PASS ---
-        const result = await Tesseract.recognize(canvas, 'eng', {
-            logger: m => {
-                if (m.status === 'recognizing text') {
-                    statusMsg.innerText = `Processing with OCR: ${Math.round(m.progress * 100)}%`;
-                }
-            }
-        });
-
-        const text = result.data.text;
-        console.log("Tesseract Raw Output:", text);
-
-        // REGEX UPDATE: Now strictly extracts BOTH sides of the slash (e.g. 025 and 193)
-        const fractionMatch = text.match(/(\d{1,3})\s*\/\s*(\d{1,3})/);
-        let foundLocalMatch = false;
-
-        if (fractionMatch) {
-            let foundId = fractionMatch[1].padStart(3, '0');
-            let foundTotal = fractionMatch[2].padStart(3, '0'); // Extracts the /XXX
             
-            // CRITERIA 1: Check if the ID exists in the current active set
-            const potentialCard = allCards.find(c => {
-                if (!c.id) return false;
-                const dbId = String(c.id).replace(/[^a-zA-Z0-9]/g, '').trim().padStart(3, '0');
-                return dbId === foundId;
-            });
-
-            if (potentialCard) {
-                // CRITERIA 2: Verify the Pokémon's Name is printed on the card
-                // Cleans out "ex", "v", etc., and checks if at least the first 5 letters of the name match
-                const cleanName = potentialCard.name.toLowerCase().replace(/\s+(ex|mega|v|vmax|vstar|gx|tag team|sv)\b/g, '').replace(/[^a-z0-9]/g, '').trim();
-                const shortName = cleanName.length > 5 ? cleanName.substring(0, 5) : cleanName;
-                const hasNameMatch = text.toLowerCase().replace(/[^a-z0-9]/g, '').includes(shortName);
-
-                // CRITERIA 3: Verify the Set Total (/XXX) is a valid match in your database
-                let hasSetMatch = false;
-                if (typeof setTotalMap !== 'undefined' && setTotalMap[foundTotal]) {
-                    hasSetMatch = true;
-                }
-
-                // THE GATEKEEPER: All 3 criteria must be true to skip Gemini
-                if (hasNameMatch && hasSetMatch) {
-                    statusMsg.style.color = "#2ecc71";
-                    statusMsg.innerText = `Fast Match: ${potentialCard.name} (#${potentialCard.id})!`;
+            modal.style.display = "block";
+            statusMsg.innerText = "Starting camera...";
+            statusMsg.style.color = "#fff";
+            document.getElementById('capture-btn').disabled = false;
+    
+            try {
+                const constraints = { 
+                    video: { 
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    } 
+                };
+    
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = videoStream;
+                
+                video.onloadedmetadata = () => {
+                    video.play();
+                    statusMsg.innerText = "Align the card inside the yellow box!";
+                    const track = videoStream.getVideoTracks()[0];
+                    if (typeof track.getCapabilities === 'function') {
+                        const capabilities = track.getCapabilities();
+                        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                            track.applyConstraints({
+                                advanced: [{ focusMode: 'continuous' }]
+                            }).catch(e => console.log("Focus constraint ignored by browser", e));
+                        }
+                    }
+                };
+            } catch (err) {
+                console.error("Camera access denied:", err);
+                statusMsg.innerText = "Error: Camera access denied or not available.";
+                statusMsg.style.color = "#ff6b6b";
+            }
+        }
+    
+        function closeScanner() {
+            document.getElementById('scannerModal').style.display = "none";
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+        }
+    
+        async function hybridScan(base64Data, canvas, statusMsg, btn) {
+            statusMsg.innerText = "Running Standard Scan (Free)...";
+            statusMsg.style.color = "#fff";
+            btn.disabled = true;
+    
+            try {
+                const result = await Tesseract.recognize(canvas, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            statusMsg.innerText = `Processing with OCR: ${Math.round(m.progress * 100)}%`;
+                        }
+                    }
+                });
+    
+                const text = result.data.text;
+                console.log("Tesseract Raw Output:", text);
+                const fractionMatch = text.match(/(\d{1,3})\s*\/\s*(\d{1,3})/);
+                let foundLocalMatch = false;
+    
+                if (fractionMatch) {
+                    let foundId = fractionMatch[1].padStart(3, '0');
+                    let foundTotal = fractionMatch[2].padStart(3, '0'); 
                     
-                    document.getElementById('searchInput').value = potentialCard.id;
+                    const potentialCard = allCards.find(c => {
+                        if (!c.id) return false;
+                        const dbId = String(c.id).replace(/[^a-zA-Z0-9]/g, '').trim().padStart(3, '0');
+                        return dbId === foundId;
+                    });
+    
+                    if (potentialCard) {
+                        const cleanName = potentialCard.name.toLowerCase().replace(/\s+(ex|mega|v|vmax|vstar|gx|tag team|sv)\b/g, '').replace(/[^a-z0-9]/g, '').trim();
+                        const shortName = cleanName.length > 5 ? cleanName.substring(0, 5) : cleanName;
+                        const hasNameMatch = text.toLowerCase().replace(/[^a-z0-9]/g, '').includes(shortName);
+    
+                        let hasSetMatch = false;
+                        if (typeof setTotalMap !== 'undefined' && setTotalMap[foundTotal]) {
+                            hasSetMatch = true;
+                        }
+    
+                        if (hasNameMatch && hasSetMatch) {
+                            statusMsg.style.color = "#2ecc71";
+                            statusMsg.innerText = `Fast Match: ${potentialCard.name} (#${potentialCard.id})!`;
+                            
+                            document.getElementById('searchInput').value = potentialCard.id;
+                            filterCards(); 
+                            
+                            setTimeout(() => {
+                                closeScanner();
+                                btn.innerText = "Scan Camera";
+                                btn.disabled = false;
+                            }, 1500);
+                            
+                            foundLocalMatch = true; 
+                        } else {
+                            console.log(`OCR False Positive Blocked: NameMatch=${hasNameMatch}, SetMatch=${hasSetMatch}`);
+                        }
+                    }
+                }
+    
+                if (!foundLocalMatch) {
+                    statusMsg.innerText = "Standard scan missed. Booting AI...";
+                    statusMsg.style.color = "#ffcb05";
+                    await processImageWithGemini(base64Data, statusMsg, btn);
+                }
+    
+            } catch (error) {
+                console.error("Tesseract Error:", error);
+                statusMsg.innerText = "Standard scan failed. Booting AI...";
+                statusMsg.style.color = "#ffcb05";
+                await processImageWithGemini(base64Data, statusMsg, btn);
+            }
+        }
+        
+        async function processImageWithGemini(base64Data, statusMsg, btn) {
+            statusMsg.innerText = "Connecting to Secure Server...";
+            statusMsg.style.color = "#ffcb05";
+            btn.disabled = true;
+    
+            try {
+                if (!GEMINI_API_KEY) {
+                    const keyResponse = await apiCall('getApiKey', {});
+                    if (keyResponse.success && keyResponse.key) {
+                        GEMINI_API_KEY = keyResponse.key;
+                    } else {
+                        throw new Error("Failed to securely load API key from Code.gs");
+                    }
+                }
+    
+                statusMsg.innerText = "Transmitting to AI... please wait.";
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                
+                const payload = {
+                    "contents": [{
+                        "parts": [
+                            {
+                                "text": "You are a Pokemon card expert. Look at this card and output strictly a JSON object with 4 keys:\n" +
+                                        "- 'name': the Pokemon's name\n" +
+                                        "- 'id': the card number on the LEFT of the slash (e.g., '126')\n" +
+                                        "- 'set_total': the total number on the RIGHT of the slash (e.g., '193')\n" +
+                                        "- 'set': the set code symbol printed on the bottom corner (e.g., 'MA3', 'sv11S', 'SV1a'). Extract it exactly as printed.\n\n" +
+                                        "Do not include markdown or conversational text. Just the raw JSON object."
+                            },
+                            {
+                                "inline_data": {
+                                    "mime_type": "image/jpeg",
+                                    "data": base64Data
+                                }
+                            }
+                        ]
+                    }]
+                };
+    
+                const response = await fetch(geminiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+    
+                const json = await response.json();
+    
+                if (!response.ok) {
+                    throw new Error(json.error?.message || "API Request Failed");
+                }
+    
+                let aiText = json.candidates[0].content.parts[0].text;
+                aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+                const aiData = JSON.parse(aiText);
+                
+                let validSetFound = false; 
+    
+                if (aiData.set && aiData.set.toLowerCase().startsWith('sv')) {
+                    let setStr = aiData.set.toLowerCase(); 
+                    let body = setStr.slice(2);            
+                    let lastChar = body.slice(-1);         
+                    let middleNumbers = body.slice(0, -1); 
+    
+                    middleNumbers = middleNumbers.replace(/l/g, '1').replace(/i/g, '1');
+                    aiData.set = 'sv' + middleNumbers + lastChar;
+                }
+    
+                if (aiData.set && typeof setCodeMap !== 'undefined') {
+                    const foundSetCode = aiData.set.toUpperCase(); 
+                    
+                    if (setCodeMap[foundSetCode]) {
+                        validSetFound = true; 
+                        if (document.getElementById('seriesSelect').value !== setCodeMap[foundSetCode]) {
+                            document.getElementById('seriesSelect').value = setCodeMap[foundSetCode];
+                            statusMsg.innerText = `Loading ${setCodeMap[foundSetCode]}...`;
+                            await changeSeries(); 
+                        }
+                    }
+                }
+    
+                if (!validSetFound && aiData.set_total && typeof setTotalMap !== 'undefined') {
+                    const foundTotal = String(aiData.set_total).padStart(3, '0'); 
+                    
+                    if (setTotalMap[foundTotal]) {
+                        if (document.getElementById('seriesSelect').value !== setTotalMap[foundTotal]) {
+                            document.getElementById('seriesSelect').value = setTotalMap[foundTotal];
+                            statusMsg.innerText = `Set Code unreadable. AR Fallback: Loading set via /${foundTotal}...`;
+                            await changeSeries();
+                        }
+                    }
+                }
+                
+                let bestMatchCard = null;
+                const normalizeName = (name) => {
+                    return name.toLowerCase()
+                        .replace(/\s+(ex|mega|v|vmax|vstar|gx|tag team|sv)\b/g, '')
+                        .replace(/[^a-z0-9]/g, '')
+                        .trim();
+                };
+    
+                if (aiData.id) {
+                    let cleanId = String(aiData.id).split('/')[0].replace(/[^a-zA-Z0-9]/g, '').trim();
+                    const paddedId = cleanId.padStart(3, '0');
+                    
+                    bestMatchCard = allCards.find(c => {
+                        if (!c.id) return false; 
+                        const dbId = String(c.id).replace(/[^a-zA-Z0-9]/g, '').trim().padStart(3, '0');
+                        return dbId === paddedId;
+                    });
+                }
+    
+                if (!bestMatchCard && aiData.name) {
+                    const normalizedAiName = normalizeName(aiData.name);
+                    bestMatchCard = allCards.find(c => {
+                        if (!c.name) return false; 
+                        const normalizedDbName = normalizeName(c.name);
+                        return normalizedDbName.includes(normalizedAiName) || normalizedAiName.includes(normalizedDbName);
+                    });
+                }
+                    
+                if (bestMatchCard) {
+                    document.getElementById('searchInput').value = bestMatchCard.id;
                     filterCards(); 
                     
                     setTimeout(() => {
@@ -748,299 +943,262 @@ async function hybridScan(base64Data, canvas, statusMsg, btn) {
                         btn.innerText = "Scan Camera";
                         btn.disabled = false;
                     }, 1500);
-                    
-                    foundLocalMatch = true; 
+    
                 } else {
-                    console.log(`OCR False Positive Blocked: NameMatch=${hasNameMatch}, SetMatch=${hasSetMatch}`);
+                    const readName = aiData.name || 'Unknown';
+                    const readId = aiData.id || '?';
+                    const readSet = aiData.set || 'Missing';
+                    const readTotal = aiData.set_total ? `/${aiData.set_total}` : '';
+    
+                    statusMsg.innerText = `AI read: ${readName} (#${readId}${readTotal}) [Set: ${readSet}], but couldn't find it in ${allCards.length} loaded cards.`;
+                    statusMsg.style.color = "#ff6b6b";
+                    btn.innerText = "Try Again";
+                    btn.disabled = false;
                 }
-            }
-        }
-
-        // --- 2. GEMINI AI (FALLBACK) PASS ---
-        if (!foundLocalMatch) {
-            statusMsg.innerText = "Standard scan missed. Booting AI...";
-            statusMsg.style.color = "#ffcb05";
-            
-            // We pass it directly to the flawless Gemini function we already built!
-            await processImageWithGemini(base64Data, statusMsg, btn);
-        }
-
-    } catch (error) {
-        console.error("Tesseract Error:", error);
-        // If Tesseract crashes for any reason, don't break the app, just use Gemini
-        statusMsg.innerText = "Standard scan failed. Booting AI...";
-        statusMsg.style.color = "#ffcb05";
-        await processImageWithGemini(base64Data, statusMsg, btn);
-    }
-}
-// ... existing variables and functions ...
-
-// Extract the Gemini API call logic for reuse
-async function processImageWithGemini(base64Data, statusMsg, btn) {
-    statusMsg.innerText = "Connecting to Secure Server...";
-    statusMsg.style.color = "#ffcb05";
-    btn.disabled = true;
-
-    try {
-        // --- 1. SECURELY FETCH API KEY FROM YOUR BACKEND ---
-        if (!GEMINI_API_KEY) {
-            const keyResponse = await apiCall('getApiKey', {});
-            if (keyResponse.success && keyResponse.key) {
-                GEMINI_API_KEY = keyResponse.key;
-            } else {
-                throw new Error("Failed to securely load API key from Code.gs");
-            }
-        }
-
-        // --- 2. TRANSMIT TO GEMINI ---
-        statusMsg.innerText = "Transmitting to AI... please wait.";
-        
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        
-        // --- 1. UPDATED AI INSTRUCTIONS ---
-       // --- UPDATED UNRESTRICTED AI INSTRUCTIONS ---
-        const payload = {
-            "contents": [{
-                "parts": [
-                    {
-                        "text": "You are a Pokemon card expert. Look at this card and output strictly a JSON object with 4 keys:\n" +
-                                "- 'name': the Pokemon's name\n" +
-                                "- 'id': the card number on the LEFT of the slash (e.g., '126')\n" +
-                                "- 'set_total': the total number on the RIGHT of the slash (e.g., '193')\n" +
-                                "- 'set': the set code symbol printed on the bottom corner (e.g., 'MA3', 'sv11S', 'SV1a'). Extract it exactly as printed.\n\n" +
-                                "Do not include markdown or conversational text. Just the raw JSON object."
-                    },
-                    {
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
-                            "data": base64Data
-                        }
-                    }
-                ]
-            }]
-        };
-
-        const response = await fetch(geminiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        const json = await response.json();
-
-        if (!response.ok) {
-            throw new Error(json.error?.message || "API Request Failed");
-        }
-
-        let aiText = json.candidates[0].content.parts[0].text;
-        aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const aiData = JSON.parse(aiText);
-        
-        // --- 2. AUTO-SWITCH DATA SOURCES WITH STRICT PRIORITY ---
-        let validSetFound = false; 
-
-        // === NEW: OCR CORRECTION FOR SV ERA SETS ===
-        if (aiData.set && aiData.set.toLowerCase().startsWith('sv')) {
-            let setStr = aiData.set.toLowerCase(); // e.g., "svlls"
-            let body = setStr.slice(2);            // Get everything after "sv" (e.g., "lls")
-            let lastChar = body.slice(-1);         // Get the final alphabet letter (e.g., "s" or "a")
-            let middleNumbers = body.slice(0, -1); // Get the middle part that SHOULD be numbers (e.g., "ll")
-
-            // Convert accidental letters 'l' or 'i' into the number '1'
-            middleNumbers = middleNumbers.replace(/l/g, '1').replace(/i/g, '1');
-
-            // Reconstruct the corrected set code (e.g., "sv" + "11" + "s" = "sv11s")
-            aiData.set = 'sv' + middleNumbers + lastChar;
-        }
-        // ===========================================
-
-        // Attempt A: STRICTLY prioritize the Set Code (Now sanitized!)
-        if (aiData.set && typeof setCodeMap !== 'undefined') {
-            const foundSetCode = aiData.set.toUpperCase(); // Will look for "SV11S" now!
-            
-            // Check if this code actually exists in your database map
-            if (setCodeMap[foundSetCode]) {
-// ... rest of your Attempt A code continues exactly as it was ...
-                validSetFound = true; // Success! Lock out the fallback.
-                
-                // Only change the dropdown if we aren't already on this set
-                if (document.getElementById('seriesSelect').value !== setCodeMap[foundSetCode]) {
-                    document.getElementById('seriesSelect').value = setCodeMap[foundSetCode];
-                    statusMsg.innerText = `Loading ${setCodeMap[foundSetCode]}...`;
-                    await changeSeries(); 
-                }
-            }
-        }
-
-        // Attempt B: ONLY search the /xxx if Attempt A completely failed 
-        if (!validSetFound && aiData.set_total && typeof setTotalMap !== 'undefined') {
-            const foundTotal = String(aiData.set_total).padStart(3, '0'); 
-            
-            // Check if this denominator exists in your fallback map
-            if (setTotalMap[foundTotal]) {
-                
-                // Only change the dropdown if we aren't already on this set
-                if (document.getElementById('seriesSelect').value !== setTotalMap[foundTotal]) {
-                    document.getElementById('seriesSelect').value = setTotalMap[foundTotal];
-                    statusMsg.innerText = `Set Code unreadable. AR Fallback: Loading set via /${foundTotal}...`;
-                    await changeSeries();
-                }
-            }
-        }
-        // --- 3. FIND THE CARD IN THE DATABASE ---
-        let bestMatchCard = null;
-        
-        const normalizeName = (name) => {
-            return name.toLowerCase()
-                .replace(/\s+(ex|mega|v|vmax|vstar|gx|tag team|sv)\b/g, '')
-                .replace(/[^a-z0-9]/g, '')
-                .trim();
-        };
-
-        if (aiData.id) {
-            // FIX 1: Aggressively strip out any #, spaces, or slashes the AI accidentally included
-            let cleanId = String(aiData.id).split('/')[0].replace(/[^a-zA-Z0-9]/g, '').trim();
-            const paddedId = cleanId.padStart(3, '0');
-            
-            bestMatchCard = allCards.find(c => {
-                if (!c.id) return false; // Safety check
-                const dbId = String(c.id).replace(/[^a-zA-Z0-9]/g, '').trim().padStart(3, '0');
-                return dbId === paddedId;
-            });
-        }
-
-        // Smart Name Match Fallback
-        if (!bestMatchCard && aiData.name) {
-            const normalizedAiName = normalizeName(aiData.name);
-            bestMatchCard = allCards.find(c => {
-                if (!c.name) return false; // Safety check
-                const normalizedDbName = normalizeName(c.name);
-                return normalizedDbName.includes(normalizedAiName) || normalizedAiName.includes(normalizedDbName);
-            });
-        }
-            
-        // Drop ID into search bar and filter
-        if (bestMatchCard) {
-            document.getElementById('searchInput').value = bestMatchCard.id;
-            filterCards(); 
-            
-            // Wait 1.5 seconds so the user can see success, then close modal
-            setTimeout(() => {
-                closeScanner();
-                btn.innerText = "Scan Camera";
+    
+            } catch (error) {
+                console.error("Scanner Error:", error);
+                statusMsg.innerText = "Error: " + error.message; 
+                statusMsg.style.color = "#ff6b6b";
+                btn.innerText = "Try Again";
                 btn.disabled = false;
-            }, 1500);
-
-        } else {
-            const readName = aiData.name || 'Unknown';
-            const readId = aiData.id || '?';
-            const readSet = aiData.set || 'Missing';
-            const readTotal = aiData.set_total ? `/${aiData.set_total}` : '';
-
-            // FIX 2: Added ${allCards.length} to tell us if the database is actually loaded!
-            statusMsg.innerText = `AI read: ${readName} (#${readId}${readTotal}) [Set: ${readSet}], but couldn't find it in ${allCards.length} loaded cards.`;
-            statusMsg.style.color = "#ff6b6b";
-            btn.innerText = "Try Again";
-            btn.disabled = false;
+            }
+        }
+    
+        async function captureAndScan() {
+            const video = document.getElementById('camera-stream');
+            const canvas = document.getElementById('snapshot-canvas');
+            const statusMsg = document.getElementById('scan-status');
+            const btn = document.getElementById('capture-btn');
+    
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+            const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const base64Data = imageDataUrl.split(',')[1]; 
+    
+            if (currentScanMode === 'orb') {
+                await processOrbScan(canvas, statusMsg, btn);
+            } else {
+                await hybridScan(base64Data, canvas, statusMsg, btn);
+            }
+        }
+    
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+    
+            const statusMsg = document.getElementById('scan-status');
+            const btn = document.getElementById('capture-btn');
+            const canvas = document.getElementById('snapshot-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            statusMsg.innerText = "Processing uploaded image...";
+            statusMsg.style.color = "#ffcb05";
+    
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = async () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    
+                    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    const base64Data = imageDataUrl.split(',')[1];
+                    
+                    if(videoStream) {
+                       videoStream.getTracks().forEach(track => track.stop());
+                    }
+    
+                    await hybridScan(base64Data, canvas, statusMsg, btn);
+                    document.getElementById('image-upload').value = '';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
-    } catch (error) {
-        console.error("Scanner Error:", error);
-        statusMsg.innerText = "Error: " + error.message; 
-        statusMsg.style.color = "#ff6b6b";
-        btn.innerText = "Try Again";
-        btn.disabled = false;
-    }
-}
-
-async function captureAndScan() {
-    const video = document.getElementById('camera-stream');
-    const canvas = document.getElementById('snapshot-canvas');
-    const statusMsg = document.getElementById('scan-status');
-    const btn = document.getElementById('capture-btn');
-
-    // Take the picture natively
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-    const base64Data = imageDataUrl.split(',')[1]; 
-
-    await hybridScan(base64Data, canvas, statusMsg, btn);
-}
-
-// New function for handling image uploads
-function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const statusMsg = document.getElementById('scan-status');
-    const btn = document.getElementById('capture-btn');
-    const canvas = document.getElementById('snapshot-canvas');
-    const ctx = canvas.getContext('2d');
-    
-    statusMsg.innerText = "Processing uploaded image...";
-    statusMsg.style.color = "#ffcb05";
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const img = new Image();
-        img.onload = async () => {
-            // Draw uploaded image to canvas
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0, img.width, img.height);
+        function applyOcrFilters(canvas) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
             
-            const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            const base64Data = imageDataUrl.split(',')[1];
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                data[i] = gray;     // R
+                data[i + 1] = gray; // G
+                data[i + 2] = gray; // B
+            }
             
-            // Optionally close the video stream if it's running
-            if(videoStream) {
-               videoStream.getTracks().forEach(track => track.stop());
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        async function loadSetDataFromSheet() {
+            try {
+                console.log("Downloading Set Data from Google Sheets...");
+                const response = await apiCall('getSetData', {});
+                
+                if (response.success) {
+                    setCodeMap = response.setCodeMap;
+                    setTotalMap = response.setTotalMap;
+                    console.log("Successfully loaded Set Data!");
+                } else {
+                    console.error("Failed to load sets from sheet:", response.error);
+                }
+            } catch (error) {
+                console.error("Network error loading sets:", error);
+            }
+        }
+
+        async function processOrbScan(canvas, statusMsg, btn) {
+            // Get your video element (change 'video' to your actual video element ID if different)
+            const videoEl = document.getElementById('camera-stream');
+            
+            // 1. Freeze the camera live view immediately
+            if (videoEl) {
+                videoEl.pause();
             }
 
-            await hybridScan(base64Data, canvas, statusMsg, btn);
-            
-            // Reset the input value so the same file can be uploaded again if needed
-            document.getElementById('image-upload').value = '';
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-        // --- IMAGE PRE-PROCESSING FOR HOLO CARDS ---
-function applyOcrFilters(canvas) {
-    const ctx = canvas.getContext('2d');
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    
-    for (let i = 0; i < data.length; i += 4) {
-        // Standard Grayscale conversion
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        
-        data[i] = gray;     // R
-        data[i + 1] = gray; // G
-        data[i + 2] = gray; // B
-    }
-    
-    ctx.putImageData(imageData, 0, 0);
-}
-        async function loadSetDataFromSheet() {
-    try {
-        console.log("Downloading Set Data from Google Sheets...");
-        const response = await apiCall('getSetData', {});
-        
-        if (response.success) {
-            setCodeMap = response.setCodeMap;
-            setTotalMap = response.setTotalMap;
-            console.log("Successfully loaded Set Data!");
-        } else {
-            console.error("Failed to load sets from sheet:", response.error);
+            // 2. Show the matching status text
+            statusMsg.innerText = "Matching the card...";
+            statusMsg.style.color = "#ffcb05";
+            btn.disabled = true;
+
+            // 3. Pause for 50ms so the browser updates the UI before running heavy math
+            setTimeout(async () => {
+                if (parsedOrbDatabase.length === 0) {
+                    statusMsg.innerText = "Error: Database is empty or still loading.";
+                    statusMsg.style.color = "#ff6b6b";
+                    btn.disabled = false;
+                    if (videoEl) videoEl.play(); // Resume live view on error
+                    return;
+                }
+
+                try {
+                    let src = cv.imread(canvas);
+                    let gray = new cv.Mat();
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+
+                    let orb = new cv.ORB(500); 
+                    let kp = new cv.KeyPointVector();
+                    let liveDes = new cv.Mat();
+                    orb.detectAndCompute(gray, new cv.Mat(), kp, liveDes);
+
+                    if (liveDes.empty()) {
+                        statusMsg.innerText = "No features detected. Ensure good lighting and retake.";
+                        statusMsg.style.color = "#ff6b6b";
+                        btn.disabled = false;
+                        
+                        // Resume live view so they can try aligning it again
+                        if (videoEl) videoEl.play(); 
+                        
+                        src.delete(); gray.delete(); orb.delete(); kp.delete(); liveDes.delete();
+                        return;
+                    }
+
+                    let bf = new cv.BFMatcher(cv.NORM_HAMMING, true);
+                    let bestMatch = null;
+                    let maxGoodMatches = 0;
+
+                    for (let i = 0; i < parsedOrbDatabase.length; i++) {
+                        let dbItem = parsedOrbDatabase[i];
+                        let matches = new cv.DMatchVector();
+                        
+                        try {
+                            bf.match(liveDes, dbItem.descriptors, matches);
+                            
+                            let goodMatches = 0;
+                            for (let j = 0; j < matches.size(); j++) {
+                                if (matches.get(j).distance < 50) { 
+                                    goodMatches++;
+                                }
+                            }
+
+                            if (goodMatches > maxGoodMatches) {
+                                maxGoodMatches = goodMatches;
+                                bestMatch = dbItem;
+                            }
+                        } catch (matchErr) {}
+                        matches.delete();
+                    }
+
+                    if (bestMatch && maxGoodMatches > 15) {
+                        statusMsg.innerText = `Match Found: ${bestMatch.name}!`;
+                        statusMsg.style.color = "#2ecc71";
+                        
+                        let uppercaseSetCode = bestMatch.setCode.toUpperCase();
+                        let targetSeriesName = bestMatch.setCode; 
+                        
+                        if (typeof setCodeMap !== 'undefined' && setCodeMap[uppercaseSetCode]) {
+                            targetSeriesName = setCodeMap[uppercaseSetCode];
+                        }
+                        
+                        if (currentSeries !== targetSeriesName) {
+                            document.getElementById('seriesSelect').value = targetSeriesName;
+                            await changeSeries(); 
+                        }
+                        
+                        document.getElementById('searchInput').value = bestMatch.id;
+                        filterCards(); 
+                        
+                        // Keep camera frozen while closing out
+                        setTimeout(() => {
+                            closeScanner();
+                            btn.innerText = "Scan Camera";
+                            btn.disabled = false;
+                        }, 1500);
+                        
+                    } else {
+                        statusMsg.innerText = `No confident match found.`;
+                        statusMsg.style.color = "#ffcb05";
+                        btn.disabled = false;
+                        
+                        // Unfreeze the camera so they can adjust the positioning/lighting
+                        if (videoEl) videoEl.play(); 
+                    }
+
+                    src.delete(); gray.delete(); orb.delete(); kp.delete(); liveDes.delete(); bf.delete();
+
+                } catch (error) {
+                    console.error("ORB Scan Error:", error);
+                    statusMsg.innerText = "Image Processing Error.";
+                    statusMsg.style.color = "#ff6b6b";
+                    btn.disabled = false;
+                    
+                    // Unfreeze on layout processing crashes
+                    if (videoEl) videoEl.play(); 
+                }
+            }, 50); 
         }
-    } catch (error) {
-        console.error("Network error loading sets:", error);
+        // Run this when your app loads the database from Google Sheets
+function convertStringToDescriptor(descriptorString) {
+    if (!descriptorString || !descriptorString.includes('|')) return null;
+    
+    try {
+        let parts = descriptorString.split('|');
+        let dims = parts[0].split(',');
+        let rows = parseInt(dims[0]);
+        let cols = parseInt(dims[1]);
+        let type = parseInt(dims[2]);
+        let base64Data = parts[1];
+        
+        // Convert Base64 back to raw bytes
+        let binary = atob(base64Data);
+        let data = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            data[i] = binary.charCodeAt(i);
+        }
+        
+        // Rebuild the OpenCV Mat object
+        let mat = new cv.Mat(rows, cols, type);
+        mat.data.set(data);
+        return mat;
+    } catch (e) {
+        console.error("Failed to parse ORB descriptor:", e);
+        return null;
     }
 }
     </script>
